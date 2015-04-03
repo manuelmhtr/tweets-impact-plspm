@@ -1,12 +1,9 @@
-# Viral Impact Predition on Tweets
+# PLS-PM analysis for Impact Predition on Tweets
 # Author: Manuel de la Torre
 
 # Load libraries
 library("plspm")
 library("plsdepot")
-# library("devtools")
-# install_github("vqv/ggbiplot")
-# library("ggbiplot")
 
 # Load data
 setwd("/Users/manuelmhtr/Projects/Learning-R/ViralImpact");
@@ -17,7 +14,6 @@ head(tweetsRaw)
 # Filter useless data
 # tweets = subset(tweetsRaw, select=-c(id, userIdStr, twitterIdStr, messageIsDirect, postHourOfDay, postDayOfWeek))
 # Normalizagin data (Inverting data where higher is worst)
-daysSinceTwitter = (as.numeric(Sys.time()) - 1142899200) / 86400 # Days since 21 march 2015
 tweets = subset(tweetsRaw, select=c(id))
 tweets$messageReach            = (tweetsRaw$messageIsDirect) * tweetsRaw$messageMentionsCount + (1 - tweetsRaw$messageIsDirect) * (tweetsRaw$userFollowersCount) + 1
 tweets$messageReachRatio       = 1 - 1 / ((tweets$messageReach / 10000) + 1) 
@@ -31,13 +27,6 @@ tweets$userFollowersRatio      = 1 - 1 / ((tweetsRaw$userFollowersCount / 10000)
 tweets$userListedRatio         = 1 - 1 / ((tweetsRaw$userListedCount / 500) + 1)
 tweets$userVerified            = tweetsRaw$userVerified
 tweets$id = NULL
-
-# tweets$userFriendsCount        = 1 - 1 / ((tweetsRaw$userFriendsCount / 10000) + 1)
-# tweets$userStatusesCount       = 1 / ((tweetsRaw$userStatusesCount / 1000) + 1) - 1
-# tweets$userTweetsPerDay        = 1 / ((tweetsRaw$userTweetsPerDay / 500) + 1) - 1
-# tweets$userAccountAge          = tweetsRaw$userAccountAge / daysSinceTwitter
-# tweets$userDefaultProfile      = tweetsRaw$userDefaultProfile
-# tweets$userHasProfileImage     = 1 - tweetsRaw$userDefaultProfileImage
 
 summary(tweets);
 
