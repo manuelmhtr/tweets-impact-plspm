@@ -21,7 +21,7 @@ tweets$messageReach            = (tweetsRaw$messageIsDirect) * tweetsRaw$message
 tweets$messageReachRatio       = 1 - 1 / ((tweets$messageReach / 10000) + 1) 
 tweets$clicksRatio             = 1 - 1 / ((tweetsRaw$clicksCount / 20) + 1) 
 tweets$retweetsRatio           = 1 - 1 / ((tweetsRaw$retweetsCount / 10) + 1) 
-tweets$favoritesRatio          = 1 - 1 / ((tweetsRaw$favoritesCount / 10) + 1)  
+tweets$favoritesRatio          = 1 - 1 / ((tweetsRaw$favoritesCount / 10) + 1)
 tweets$userKloutLevel          = tweetsRaw$userKloutScore / 100
 tweets$userMozLevel            = tweetsRaw$userMozScore   / 100
 tweets$messageHasMedia         = tweetsRaw$messageHasMedia
@@ -29,6 +29,10 @@ tweets$userFollowersRatio      = 1 - 1 / ((tweetsRaw$userFollowersCount / 10000)
 tweets$userListedRatio         = 1 - 1 / ((tweetsRaw$userListedCount / 500) + 1)
 tweets$userVerified            = tweetsRaw$userVerified
 tweets$id = NULL
+
+tweets$clicksRatio             = 1 - 1 / ((tweetsRaw$clicksCount * 100000) + 1) 
+tweets$retweetsRatio           = 1 - 1 / ((tweetsRaw$retweetsCount * 100000) + 1) 
+tweets$favoritesRatio          = 1 - 1 / ((tweetsRaw$favoritesCount * 100000) + 1)
 
 # Custom normalization
 tweets = subset(tweetsRaw, select=c(id))
@@ -45,7 +49,7 @@ tweets$userListedRatio         = customNormalizationSd(tweetsRaw$userListedCount
 tweets$userVerified            = tweetsRaw$userVerified
 tweets$id = NULL
 
-
+tweets$clicksRatio
 hist(tweets$messageReachRatio)
 hist(tweets$clicksRatio)
 hist(tweets$retweetsRatio)
