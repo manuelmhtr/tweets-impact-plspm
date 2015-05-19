@@ -5,6 +5,7 @@
 library("plspm")
 library("plsdepot")
 library("corrplot")
+library("e1071")  
 
 # Load data
 setwd("/Users/manuelmhtr/Projects/TweetsImpactPrediction/PLSPM");
@@ -30,24 +31,80 @@ tweets$userListedRatio         = 1 - 1 / ((tweetsRaw$userListedCount / 500) + 1)
 tweets$userVerified            = tweetsRaw$userVerified
 tweets$id = NULL
 
-tweets$clicksRatio             = 1 - 1 / ((tweetsRaw$clicksCount * 100000) + 1) 
-tweets$retweetsRatio           = 1 - 1 / ((tweetsRaw$retweetsCount * 100000) + 1) 
-tweets$favoritesRatio          = 1 - 1 / ((tweetsRaw$favoritesCount * 100000) + 1)
 
-# Custom normalization
 tweets = subset(tweetsRaw, select=c(id))
 tweets$messageReach            = (tweetsRaw$messageIsDirect) * tweetsRaw$messageMentionsCount + (1 - tweetsRaw$messageIsDirect) * (tweetsRaw$userFollowersCount) + 1
-tweets$messageReachRatio       = customNormalizationMean(tweets$messageReach)
-tweets$clicksRatio             = customNormalizationMean(tweetsRaw$clicksCount) 
-tweets$retweetsRatio           = customNormalizationMean(tweetsRaw$retweetsCount)
-tweets$favoritesRatio          = customNormalizationMean(tweetsRaw$favoritesCount) 
+tweets$messageReachRatio       = 1 - 1 / ((tweets$messageReach / getFactor3(tweets$messageReach)) + 1) 
+tweets$clicksRatio             = 1 - 1 / ((tweetsRaw$clicksCount / getFactor3(tweetsRaw$clicksCount)) + 1) 
+tweets$retweetsRatio           = 1 - 1 / ((tweetsRaw$retweetsCount / getFactor3(tweetsRaw$retweetsCount)) + 1) 
+tweets$favoritesRatio          = 1 - 1 / ((tweetsRaw$favoritesCount / getFactor3(tweetsRaw$favoritesCount)) + 1)
 tweets$userKloutLevel          = tweetsRaw$userKloutScore / 100
 tweets$userMozLevel            = tweetsRaw$userMozScore   / 100
 tweets$messageHasMedia         = tweetsRaw$messageHasMedia
-tweets$userFollowersRatio      = customNormalizationMean(tweetsRaw$userFollowersCount)
-tweets$userListedRatio         = customNormalizationSd(tweetsRaw$userListedCount)
+tweets$userFollowersRatio      = 1 - 1 / ((tweetsRaw$userFollowersCount / getFactor3(tweetsRaw$userFollowersCount)) + 1)
+tweets$userListedRatio         = 1 - 1 / ((tweetsRaw$userListedCount / getFactor3(tweetsRaw$userListedCount)) + 1)
 tweets$userVerified            = tweetsRaw$userVerified
 tweets$id = NULL
+
+hist(tweets$messageReachRatio);
+hist(tweets$clicksRatio);
+hist(tweets$retweetsRatio);
+hist(tweets$favoritesRatio);
+hist(tweets$userFollowersRatio);
+hist(tweets$userListedRatio);
+
+sd(tweets$messageReachRatio);
+sd(tweets$clicksRatio);
+sd(tweets$retweetsRatio);
+sd(tweets$favoritesRatio);
+sd(tweets$userFollowersRatio);
+
+sd(tweetsRaw)
+summary(tweetsRaw)
+#tweets$impactCount             = tweetsRaw$clicksCount + tweetsRaw$retweetsCount + tweetsRaw$favoritesCount
+#tweets$impactRatio             = 1 - 1 / ((tweets$impactCount / 10) + 1)
+#sd(tweets$impactRatio)
+tweets$clicksRatio             = 1 - 1 / ((tweetsRaw$messageReach / 20) + 1) 
+sd(tweets$clicksRatio);
+skewness(tweets$clicksRatio);
+hist(tweets$favoritesRatio);
+
+sd = c();
+kt = c();
+sk = c();
+x  = seq(10000, 100000, by=1000);
+for(i in x) {
+  value = 1 - 1 / ((tweets$messageReach / i) + 1);
+  sd  = c(sd, sd(value) / mean(value));
+  kt  = c(kt, kurtosis(value));
+  sk  = c(sk, skewness(value));
+}
+sd
+plot(x, sd, col="blue");
+
+normValue = function(value) {
+  print(mean(value));
+  print(sd(value));
+  print(skewness(value));
+  print(kurtosis(value));
+  print(sd(value) / mean(value));
+  print(mean(value)^3 / sd(value)^3);
+  print(quantile(value));
+}
+normValue(tweets$messageReach);
+normValue(tweetsRaw$retweetsCount);
+normValue(tweets$messageReachRatio);
+normValue(tweets$clicksRatio);
+
+boxplot(tweets$messageReach);
+summary(tweets$messageReach);
+summary(tweetsRaw$retweetsCount);
+median(tweetsRaw$clicksCount);
+hist(1 - 1 / ((tweetsRaw$clicksCount / 7.8) + 1));
+hist(1 - 1 / ((tweets$messageReach / 8243) + 1));
+hist(1 - 1 / ((tweetsRaw$favoritesCount / 2.5) + 1));
+hist(1 - 1 / ((tweets$messageReach / (mean(tweets$messageReach))) + 1));
+hist(1 - 1 / ((tweetsRaw$clicksCount / (mean(tweetsRaw$clicksCount)*5)) + 1));
 
 tweets$clicksRatio
 hist(tweets$messageReachRatio)
@@ -56,6 +113,57 @@ hist(tweets$retweetsRatio)
 hist(tweets$favoritesRatio)
 hist(tweets$userFollowersRatio)
 hist(tweets$userListedRatio)
+quantile(tweetsRaw$clicksCount)
+quantile(tweets$retweetsRatio)[[2]]
+
+
+hist(1 - 1 / ((tweetsRaw$clicksCount / 18) + 1));
+hist(1 - 1 / ((tweets$messageReach / 30000) + 1));
+
+getFactor1 = function(collection) {
+  quants = quantile(collection);
+  print(quants);
+  wide   = max((quants[[4]] - quants[[2]]), 1) * 2;
+  print(wide);
+  med    = max(median(collection), 0.001);
+  dest   = med / wide;
+  print(med);
+  print(dest);
+  return ((med - dest * med) / dest);
+}
+factor1 = getFactor1(tweets$messageReach);
+print(factor1);
+factor1 = getFactor1(tweetsRaw$clicksCount);
+print(factor1);
+
+getFactor2 = function(collection) {
+  quants = quantile(collection);
+  #wide   = (max(collection) - min(collection));
+  wide   = 3 * sd(collection);
+  med    = mean(collection);
+  dest   = med / wide;
+  return ((med - dest * med) / dest);
+}
+print(getFactor2(tweets$messageReach));
+print(getFactor2(tweetsRaw$clicksCount));
+print(getFactor2(tweetsRaw$favoritesCount));
+
+getFactor3 = function(collection) {
+  quants = quantile(collection);
+  
+  #med   = (quants[[4]] - quants[[2]]) / 2;
+  med    = mean(collection);
+  eqs   = skewness(collection) / 75;
+  dest  = 0.5 - 0.5 * (exp(eqs) - exp(-eqs)) / (exp(eqs) + exp(-eqs));
+  #dest   = 0.75 - 0.5 / (1+exp(-skewness(collection)/1));
+  print(med);
+  print(dest);
+  return ((med - dest * med) / dest);
+}
+print(getFactor3(tweets$messageReach));
+print(getFactor3(tweetsRaw$clicksCount))
+print(getFactor3(tweetsRaw$favoritesCount));
+
 
 summary(tweets);
 M <- cor(tweets)
@@ -63,14 +171,14 @@ corrplot.mixed(M, tl.pos="lt")
 ?corrplot.mixed
 
 # Tests for normalizagin data
-originalVar = tweets$messageReach
+originalVar = tweets$impactCount
 summary(originalVar);
 sd(originalVar)
 boxplot(originalVar)
 hist(originalVar)
 
 checkingVar = 1 - 1 / ((1 * originalVar / (sd(originalVar) ^ 0.7)) + 1) 
-#checkingVar = 1 - 1 / ((originalVar / 10000) + 1)
+checkingVar = 1 - 1 / ((originalVar / 10) + 1)
 summary(checkingVar)
 sd(checkingVar)
 boxplot(checkingVar)
@@ -124,6 +232,7 @@ plot(nipals(tweets[,audience_cols]), main = "Audience indicators (circle of corr
 # 2: favoritesRatio, retweetsRatio, clicksRatio
 tweetsRotationAbs[order(-tweetsRotationAbs[,"PC2"]),2]
 impact_cols = c(3,4,5);
+#impact_cols = c(13);
 plot(nipals(tweets[,impact_cols]), main = "Impact indicators (circle of correlations)", cex.main = 1)
 
 # 3: messageHasMedia, userVerified
@@ -204,33 +313,49 @@ bootPls$boot
 # Plot Neural Network Error
 library("RMySQL");
 db <- dbConnect(RMySQL::MySQL(), user='root', password='', dbname='viral_development', host='127.0.0.1')
-#dbSendQuery(db, "UPDATE stats_raw set predictedClicksRatio = NULL, predictedRetweetsRatio = NULL, predictedFavoritesRatio = NULL WHERE 1");
+#dbSendQuery(db, "UPDATE stats_raw set predictedClicksRatio = NULL, predictedRetweetsRatio = NULL, predictedFavoritesRatio = NULL, predictedImpactRatio = NULL WHERE 1");
 
 # Control test
-result <- dbSendQuery(db, "SELECT actualRetweetsRatio, actualFavoritesRatio, actualClicksRatio FROM stats_raw WHERE 1 LIMIT 100000");
-controlData = dbFetch(result, n=-1)
-controlData$avgImpact = controlData$actualRetweetsRatio + controlData$actualFavoritesRatio + controlData$actualClicksRatio
-meanAvgImpact = mean(controlData$avgImpact)
-controlData$stdError  = (controlData$avgImpact - meanAvgImpact)
+#result <- dbSendQuery(db, "SELECT actualRetweetsRatio, actualFavoritesRatio, actualClicksRatio, actualImpactRatio FROM stats_raw WHERE 1 LIMIT 100000");
+#controlData = dbFetch(result, n=-1)
+#controlData$avgImpact  = controlData$actualRetweetsRatio + controlData$actualFavoritesRatio + controlData$actualClicksRatio
+#meanAvgImpact          = mean(controlData$avgImpact)
+#controlData$stdError   = (controlData$avgImpact - meanAvgImpact)
+#errors  = controlData$stdError;
+#results = controlData$avgImpact;
 
 # Regular Neural network test
-result <- dbSendQuery(db, "SELECT id, predictionError FROM stats_raw WHERE predictionError IS NOT NULL LIMIT 100000");
-errorData = dbFetch(result, n=-1)
+result <- dbSendQuery(db, "SELECT id, actualRetweetsRatio, actualFavoritesRatio, actualClicksRatio, predictionError FROM stats_raw WHERE predictionError IS NOT NULL LIMIT 100000");
+dbData  = dbFetch(result, n=-1);
+results = controlData$actualRetweetsRatio + controlData$actualFavoritesRatio + controlData$actualClicksRatio;
 
-# Square error
-#errors = controlData$stdError^2;
-errors = errorData$predictionError^2;
+# Control errors
+stdErrors = (results - mean(results));
+errors = stdErrors;
+
+# Prediction errors
+errors = errorData$predictionError;
+
+
+
+# Show summary
+summary(errors);
+summary(results);
 
 # Init vars
 data = c();
 
-# Build linear model
-errorsLm = lm(errors ~ c(1:length(errors)))
-data$coefA = errorsLm$coefficients[[1]];
-data$coefB = errorsLm$coefficients[[2]];
+data$mad = mean(abs(errors));
+data$mse = mean(errors^2);
+data$sse = sum(errors^2);
+data$maxError = max(errors^2);
 
-# Show summary
-summary(errors)
+print(data);
+(0.1480-0.1987)/0.1987
+(0.0574-0.0986)/0.0986
+(2651.45-4550.20)/4550.20
+(5.7538-7.3601)/7.3601
+
 data$totalError = sum(errors);
 data$meanError  = mean(errors);
 data$maxError   = max(errors);
@@ -238,10 +363,31 @@ data$minError   = min(errors);
 data$success    = length(errors[errors < 0.25]);
 data$successPer = data$success / length(errors);
 
+
+print(data);
+
+# Build linear model
+errorsLm = lm(errors ~ c(1:length(errors)))
+data$coefA = errorsLm$coefficients[[1]];
+data$coefB = errorsLm$coefficients[[2]];
+
+# Plots
+hist(errors, breaks=100)
+?boxplot
+boxplot(data.frame(e=errors, s=stdErrors))
+boxplot(errors)
+summary(errors)
+length(errors)
+
 # Plot data and linear model
 #par(mfrow=c(1,1), mar=c(1,1,1,1))
-plot.ts(errors, type="c");
-abline(errorsLm, col="red");
+controlError = controlData$stdError^2;
+neuralNetworkError = errorData$predictionError^2;
+plot.ts(controlError, type="o", col="#00000033", ylim=c(0, 7));
+plot.ts(neuralNetworkError, type="o", col="#00000033", ylim=c(0, 7));
+plot.ts(errors, type="o", col="#00000033", ylim=c(0, 7));
+#abline(errorsLm, col="red");
 
 # Finally, print data
 print(data);
+
